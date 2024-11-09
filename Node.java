@@ -1,9 +1,9 @@
 class Node {
     int key;
-    Node left, right;
+    Node left, right, parent;  // Añadimos el campo parent
 
     public Node(int item) {
         key = item;
-        left = right = null;
+        left = right = parent = null;
     }
 }
