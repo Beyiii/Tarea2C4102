@@ -89,42 +89,19 @@ class SplayTree {
         return (raiz != null && raiz.valor == valor);
     }
 
-    // Método de inserción con splay
-    public void insertar(int valor) {
-        if (raiz == null) {
-            raiz = new NodoSplay(valor);
-            return;
-        }
-        raiz = splay(raiz, valor);
-
-        if (raiz.valor == valor) {
-            return; // El valor ya está en el árbol
-        }
-
-        NodoSplay nuevoNodo = new NodoSplay(valor);
-        if (valor < raiz.valor) {
-            nuevoNodo.derecho = raiz;
-            nuevoNodo.izquierdo = raiz.izquierdo;
-            raiz.izquierdo = null;
-        } else {
-            nuevoNodo.izquierdo = raiz;
-            nuevoNodo.derecho = raiz.derecho;
-            raiz.derecho = null;
-        }
-        raiz = nuevoNodo;
+    // Rotaciones simples
+    private Node rotateRight(Node node) {
+        Node x = node.left;
+        node.left = x.right;
+        x.right = node;
+        return x;
     }
 
-    // Método para imprimir el árbol (opcional, para depuración)
-    public void imprimirEnOrden() {
-        imprimirEnOrdenRecursivo(raiz);
-        System.out.println();
-    }
 
-    private void imprimirEnOrdenRecursivo(NodoSplay nodo) {
-        if (nodo != null) {
-            imprimirEnOrdenRecursivo(nodo.izquierdo);
-            System.out.print(nodo.valor + " ");
-            imprimirEnOrdenRecursivo(nodo.derecho);
-        }
+    private Node rotateLeft(Node node) {
+        Node x = node.right;
+        node.right = x.left;
+        x.left = node;
+        return x;
     }
 }
