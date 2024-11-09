@@ -15,9 +15,9 @@ public class Experiment {
 
             System.out.println("Running experiments for N = " + n + ", M = " + m);
             runScenario1(elements, m);
-            runScenario2(elements, m);
-            runScenario3(elements, m);
-            runScenario4(elements, m);
+            //runScenario2(elements, m);
+            //runScenario3(elements, m);
+            //runScenario4(elements, m);
         }
     }
 
