@@ -35,7 +35,6 @@ public class SplayTree {
     // Zig-zig
     private void zigZig(NodoSplay x) {
         NodoSplay p = x.padre;
-        NodoSplay g = p.padre;
         zig(p);
         zig(x);
     }
@@ -43,7 +42,6 @@ public class SplayTree {
     // Zag-zag
     private void zagZag(NodoSplay x) {
         NodoSplay p = x.padre;
-        NodoSplay g = p.padre;
         zag(p);
         zag(x);
     }

@@ -1,172 +1,124 @@
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.List;
-import java.util.Random;
+import java.io.FileWriter;
+import java.io.IOException;
+import java.io.PrintWriter;
+import java.util.*;
+import java.util.stream.IntStream;
 
 public class Experiment {
-    private static final Random random = new Random();
+    private static final int[] N_VALUES = {100000}; //, 200000, 300000, 400000, 500000, 600000, 700000, 800000, 900000, 1000000};
+    private static final int M_FACTOR = 100;
 
+    // Método principal para realizar el experimento y registrar en CSV
     public static void main(String[] args) {
-        int[] ns = {100000, 200000, 300000, 400000, 500000, 600000, 700000, 800000, 900000, 1000000};
-        int mFactor = 100;
-        for (int n : ns) {
-            int m = mFactor * n;
-            List<Integer> elements = generateUniqueRandomIntegers(n);
+        try (PrintWriter writer = new PrintWriter(new FileWriter("resultados_experimento.csv"))) {
+            writer.println("n_escenario,tipo_arbol,t_prom"); // Encabezado del archivo CSV
 
-            System.out.println("Running experiments for N = " + n + ", M = " + m);
-            runScenario1(elements, m);
-            //runScenario2(elements, m);
-            //runScenario3(elements, m);
-            //runScenario4(elements, m);
-        }
-    }
+            for (int N : N_VALUES) {
+                int M = M_FACTOR * N;
+                System.out.println("Experimento con N = " + N + " y M = " + M);
 
-    // Ejemplo de implementación de la experimentación
-    public static void runScenario1(List<Integer> elements, int m) {
-        BinarySearchTree bst = new BinarySearchTree();
-        SplayTree splayTree = new SplayTree();
+                // Genera valores aleatorios únicos para insertar
+                int[] elementos = IntStream.range(0, N).toArray();
+                Collections.shuffle(Arrays.asList(elementos));
 
-        for (int value : elements) {
-            bst.insert(value);
-            splayTree.insert(value);
-        }
+                // Instancia de ABB y Splay Tree
+                ABB abb = new ABB();
+                SplayTree splayTree = new SplayTree();
 
-        List<Integer> searches = generateSearchPattern(elements, m / elements.size());
-        Collections.shuffle(searches);
+                // Escenario 1: Inserción aleatoria y búsqueda aleatoria
+                for (int valor : elementos) {
+                    abb.insertar(valor);
+                    splayTree.insertar(valor);
+                }
+                int[] busquedasEscenario1 = generarArregloBusquedaAleatoria(elementos, M);
+                registrarTiempoPromedio(writer, 1, "ABB", realizarBusquedaABB(abb, busquedasEscenario1), M);
+                registrarTiempoPromedio(writer, 1, "Splay Tree", realizarBusquedaSplayTree(splayTree, busquedasEscenario1), M);
 
-        long startTime = System.currentTimeMillis();
-        for (int value : searches) {
-            bst.search(bst.root, value);
-        }
-        System.out.println("ABB search time for Scenario 1: " + (System.currentTimeMillis() - startTime) + " ms");
+                // Escenario 2: Inserción aleatoria y búsqueda sesgada
+                double C = calcularConstanteC(N);
+                int[] busquedasEscenario2 = generarArregloBusquedaSesgado(elementos, M, C);
+                registrarTiempoPromedio(writer, 2, "ABB", realizarBusquedaABB(abb, busquedasEscenario2), M);
+                registrarTiempoPromedio(writer, 2, "Splay Tree", realizarBusquedaSplayTree(splayTree, busquedasEscenario2), M);
 
-        startTime = System.currentTimeMillis();
-        for (int value : searches) {
-            splayTree.search(value);
-        }
-        System.out.println("Splay Tree search time for Scenario 1: " + (System.currentTimeMillis() - startTime) + " ms");
-    }
+                // Escenario 3: Inserción ordenada y búsqueda aleatoria
+                Arrays.sort(elementos);
+                ABB abbOrdenado = new ABB();
+                SplayTree splayTreeOrdenado = new SplayTree();
+                for (int valor : elementos) {
+                    abbOrdenado.insertar(valor);
+                    splayTreeOrdenado.insertar(valor);
+                }
+                registrarTiempoPromedio(writer, 3, "ABB", realizarBusquedaABB(abbOrdenado, busquedasEscenario1), M);
+                registrarTiempoPromedio(writer, 3, "Splay Tree", realizarBusquedaSplayTree(splayTreeOrdenado, busquedasEscenario1), M);
 
-    private static List<Integer> generateUniqueRandomIntegers(int n) {
-        List<Integer> elements = new ArrayList<>();
-        while (elements.size() < n) {
-            int value = random.nextInt(10 * n);
-            if (!elements.contains(value)) {
-                elements.add(value);
+                // Escenario 4: Inserción ordenada con búsqueda sesgada (elementos originales en desorden)
+                int[] elementosDesordenados = elementos.clone();
+                Collections.shuffle(Arrays.asList(elementosDesordenados));
+                int[] busquedasEscenario4 = generarArregloBusquedaSesgado(elementosDesordenados, M, C);
+                registrarTiempoPromedio(writer, 4, "ABB", realizarBusquedaABB(abbOrdenado, busquedasEscenario4), M);
+                registrarTiempoPromedio(writer, 4, "Splay Tree", realizarBusquedaSplayTree(splayTreeOrdenado, busquedasEscenario4), M);
+
+                System.out.println("Resultados guardados para N = " + N);
             }
+        } catch (IOException e) {
+            System.out.println("Error al escribir en el archivo CSV: " + e.getMessage());
         }
-        return elements;
     }
 
-    private static List<Integer> generateSearchPattern(List<Integer> elements, int repetitionFactor) {
-        List<Integer> searches = new ArrayList<>();
-        for (int value : elements) {
-            for (int i = 0; i < repetitionFactor; i++) {
-                searches.add(value);
-            }
-        }
-        return searches;
+    // Método para registrar el tiempo promedio en el archivo CSV
+    private static void registrarTiempoPromedio(PrintWriter writer, int nEscenario, String tipoArbol, long tiempoTotal, int M) {
+        double tProm = tiempoTotal / (double) M;
+        writer.println(nEscenario + "," + "\"" + tipoArbol + "\"," + tProm);
     }
 
-    private static double calculateConstantC(int n) {
-        double sum = 0.0;
-        for (int i = 0; i < n; i++) {
-            sum += 1.0 / Math.pow(i + 1, 2);
+    // Genera el arreglo de búsquedas aleatorias para el Escenario 1
+    private static int[] generarArregloBusquedaAleatoria(int[] elementos, int M) {
+        int N = elementos.length;
+        int[] busquedas = new int[M];
+        for (int i = 0; i < N; i++) {
+            int repeticiones = M / N;
+            Arrays.fill(busquedas, i * repeticiones, (i + 1) * repeticiones, elementos[i]);
         }
-        return 1.0 / sum;
+        Collections.shuffle(Arrays.asList(busquedas));
+        return busquedas;
     }
 
-    private static List<Integer> generateBiasedSearchPattern(List<Integer> elements, int m, double c) {
-        List<Integer> searches = new ArrayList<>();
-        int n = elements.size();
-        for (int i = 0; i < n; i++) {
-            int repetitions = (int) Math.floor(m * c / Math.pow(i + 1, 2));
-            for (int j = 0; j < repetitions; j++) {
-                searches.add(elements.get(i));
-            }
+    // Calcula la constante C para la función de probabilidad
+    private static double calcularConstanteC(int N) {
+        double suma = 0;
+        for (int i = 0; i < N; i++) {
+            suma += 1.0 / Math.pow(i + 1, 2);
         }
-        Collections.shuffle(searches);
-        return searches;
+        return 1.0 / suma;
     }
 
-    public static void runScenario2(List<Integer> elements, int m) {
-        BinarySearchTree bst = new BinarySearchTree();
-        SplayTree splayTree = new SplayTree();
-
-        for (int value : elements) {
-            bst.insert(value);
-            splayTree.insert(value);
+    // Genera el arreglo de búsquedas sesgado según la función de probabilidad
+    private static int[] generarArregloBusquedaSesgado(int[] elementos, int M, double C) {
+        int N = elementos.length;
+        List<Integer> listaBusqueda = new ArrayList<>();
+        for (int i = 0; i < N; i++) {
+            int copias = (int) Math.floor(M * (C / Math.pow(i + 1, 2)));
+            listaBusqueda.addAll(Collections.nCopies(copias, elementos[i]));
         }
-
-        double c = calculateConstantC(elements.size());
-        List<Integer> searches = generateBiasedSearchPattern(elements, m, c);
-
-        long startTime = System.currentTimeMillis();
-        for (int value : searches) {
-            bst.search(bst.root, value);
-        }
-        System.out.println("ABB search time for Scenario 2: " + (System.currentTimeMillis() - startTime) + " ms");
-
-        startTime = System.currentTimeMillis();
-        for (int value : searches) {
-            splayTree.search(value);
-        }
-        System.out.println("Splay Tree search time for Scenario 2: " + (System.currentTimeMillis() - startTime) + " ms");
+        Collections.shuffle(listaBusqueda);
+        return listaBusqueda.stream().mapToInt(Integer::intValue).toArray();
     }
 
-    public static void runScenario3(List<Integer> elements, int m) {
-        Collections.sort(elements);
-
-        BinarySearchTree bst = new BinarySearchTree();
-        SplayTree splayTree = new SplayTree();
-
-        for (int value : elements) {
-            bst.insert(value);
-            splayTree.insert(value);
+    // Realiza el experimento en el ABB y calcula el tiempo total de búsqueda
+    private static long realizarBusquedaABB(ABB abb, int[] elementos) {
+        long inicio = System.nanoTime();
+        for (int valor : elementos) {
+            abb.buscar(valor);
         }
-
-        List<Integer> searches = generateSearchPattern(elements, m / elements.size());
-        Collections.shuffle(searches);
-
-        long startTime = System.currentTimeMillis();
-        for (int value : searches) {
-            bst.search(bst.root, value);
-        }
-        System.out.println("ABB search time for Scenario 3: " + (System.currentTimeMillis() - startTime) + " ms");
-
-        startTime = System.currentTimeMillis();
-        for (int value : searches) {
-            splayTree.search(value);
-        }
-        System.out.println("Splay Tree search time for Scenario 3: " + (System.currentTimeMillis() - startTime) + " ms");
+        return System.nanoTime() - inicio;
     }
 
-    public static void runScenario4(List<Integer> elements, int m) {
-        List<Integer> sortedElements = new ArrayList<>(elements);
-        Collections.sort(sortedElements);
-
-        BinarySearchTree bst = new BinarySearchTree();
-        SplayTree splayTree = new SplayTree();
-
-        for (int value : sortedElements) {
-            bst.insert(value);
-            splayTree.insert(value);
+    // Realiza el experimento en el Splay Tree y calcula el tiempo total de búsqueda
+    private static long realizarBusquedaSplayTree(SplayTree splayTree, int[] elementos) {
+        long inicio = System.nanoTime();
+        for (int valor : elementos) {
+            splayTree.buscar(valor);
         }
-
-        double c = calculateConstantC(elements.size());
-        List<Integer> searches = generateBiasedSearchPattern(elements, m, c);
-
-        long startTime = System.currentTimeMillis();
-        for (int value : searches) {
-            bst.search(bst.root, value);
-        }
-        System.out.println("ABB search time for Scenario 4: " + (System.currentTimeMillis() - startTime) + " ms");
-
-        startTime = System.currentTimeMillis();
-        for (int value : searches) {
-            splayTree.search(value);
-        }
-        System.out.println("Splay Tree search time for Scenario 4: " + (System.currentTimeMillis() - startTime) + " ms");
+        return System.nanoTime() - inicio;
     }
-
 }

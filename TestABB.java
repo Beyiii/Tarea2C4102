@@ -8,6 +8,15 @@ public class TestABB {
         abb.insertar(15);
         abb.insertar(2);
         abb.insertar(8);
+        abb.insertar(12);
+        abb.insertar(20);
+        abb.insertar(1);
+        abb.insertar(3);
+        abb.insertar(7);
+        abb.insertar(9);
+        abb.insertar(11);
+        abb.insertar(13);
+        
 
         // Ejemplo de búsqueda
         System.out.println("Buscar 10: " + abb.buscar(10)); // true
