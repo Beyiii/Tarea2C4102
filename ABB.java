@@ -40,10 +40,13 @@ class ABB {
             nodo.izquierdo = insertarRecursivo(nodo.izquierdo, valor);
         } else if (valor > nodo.valor) {
             nodo.derecho = insertarRecursivo(nodo.derecho, valor);
+        } else {
+            // Si el valor ya existe, no hacemos nada y retornamos el nodo actual
+            return nodo;
         }
-        return nodo; // Retornar el nodo sin cambios si el valor ya está presente
+        return nodo; // Retornar el nodo actualizado
     }
-
+    
     // Método para imprimir el árbol (opcional, para depuración)
     public void imprimirEnOrden() {
         imprimirEnOrdenRecursivo(raiz);

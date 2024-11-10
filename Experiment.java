@@ -1,124 +1,203 @@
-import java.io.FileWriter;
-import java.io.IOException;
-import java.io.PrintWriter;
 import java.util.*;
-import java.util.stream.IntStream;
+import java.io.*;
 
 public class Experiment {
-    private static final int[] N_VALUES = {100000}; //, 200000, 300000, 400000, 500000, 600000, 700000, 800000, 900000, 1000000};
-    private static final int M_FACTOR = 100;
 
-    // Método principal para realizar el experimento y registrar en CSV
-    public static void main(String[] args) {
-        try (PrintWriter writer = new PrintWriter(new FileWriter("resultados_experimento.csv"))) {
-            writer.println("n_escenario,tipo_arbol,t_prom"); // Encabezado del archivo CSV
+    // Función f(i) = C / (i + 1)^2
+    private static double funcionProbabilidad(int i, double C) {
+        return C / Math.pow(i + 1, 2);
+    }
 
-            for (int N : N_VALUES) {
-                int M = M_FACTOR * N;
-                System.out.println("Experimento con N = " + N + " y M = " + M);
+    // Método para calcular la constante C para la función de probabilidad
+    private static double calcularC(int N) {
+        double sum = 0;
+        for (int i = 0; i < N; i++) {
+            sum += 1 / Math.pow(i + 1, 2);
+        }
+        return 1 / sum; // Invertimos la suma para que la suma de f(i) sea 1
+    }
 
-                // Genera valores aleatorios únicos para insertar
-                int[] elementos = IntStream.range(0, N).toArray();
-                Collections.shuffle(Arrays.asList(elementos));
+    // Método para generar un arreglo con N elementos aleatorios
+    private static int[] generarArregloAleatorio(int N) {
+        Random rand = new Random();
+        int[] arreglo = new int[N];
+        for (int i = 0; i < N; i++) {
+            arreglo[i] = rand.nextInt(1000000); // números aleatorios en un rango
+        }
+        return arreglo;
+    }
 
-                // Instancia de ABB y Splay Tree
-                ABB abb = new ABB();
-                SplayTree splayTree = new SplayTree();
-
-                // Escenario 1: Inserción aleatoria y búsqueda aleatoria
-                for (int valor : elementos) {
-                    abb.insertar(valor);
-                    splayTree.insertar(valor);
-                }
-                int[] busquedasEscenario1 = generarArregloBusquedaAleatoria(elementos, M);
-                registrarTiempoPromedio(writer, 1, "ABB", realizarBusquedaABB(abb, busquedasEscenario1), M);
-                registrarTiempoPromedio(writer, 1, "Splay Tree", realizarBusquedaSplayTree(splayTree, busquedasEscenario1), M);
-
-                // Escenario 2: Inserción aleatoria y búsqueda sesgada
-                double C = calcularConstanteC(N);
-                int[] busquedasEscenario2 = generarArregloBusquedaSesgado(elementos, M, C);
-                registrarTiempoPromedio(writer, 2, "ABB", realizarBusquedaABB(abb, busquedasEscenario2), M);
-                registrarTiempoPromedio(writer, 2, "Splay Tree", realizarBusquedaSplayTree(splayTree, busquedasEscenario2), M);
-
-                // Escenario 3: Inserción ordenada y búsqueda aleatoria
-                Arrays.sort(elementos);
-                ABB abbOrdenado = new ABB();
-                SplayTree splayTreeOrdenado = new SplayTree();
-                for (int valor : elementos) {
-                    abbOrdenado.insertar(valor);
-                    splayTreeOrdenado.insertar(valor);
-                }
-                registrarTiempoPromedio(writer, 3, "ABB", realizarBusquedaABB(abbOrdenado, busquedasEscenario1), M);
-                registrarTiempoPromedio(writer, 3, "Splay Tree", realizarBusquedaSplayTree(splayTreeOrdenado, busquedasEscenario1), M);
-
-                // Escenario 4: Inserción ordenada con búsqueda sesgada (elementos originales en desorden)
-                int[] elementosDesordenados = elementos.clone();
-                Collections.shuffle(Arrays.asList(elementosDesordenados));
-                int[] busquedasEscenario4 = generarArregloBusquedaSesgado(elementosDesordenados, M, C);
-                registrarTiempoPromedio(writer, 4, "ABB", realizarBusquedaABB(abbOrdenado, busquedasEscenario4), M);
-                registrarTiempoPromedio(writer, 4, "Splay Tree", realizarBusquedaSplayTree(splayTreeOrdenado, busquedasEscenario4), M);
-
-                System.out.println("Resultados guardados para N = " + N);
+    // Método para crear el arreglo de búsqueda para el escenario 1
+    private static int[] crearArregloBusqueda(int[] A, int M) {
+        int N = A.length;
+        int[] B = new int[M];
+        int count = 0;
+        for (int i = 0; i < N; i++) {
+            for (int j = 0; j < M / N; j++) {
+                B[count++] = A[i];
             }
+        }
+        // Mezclar el arreglo B aleatoriamente
+        List<Integer> lista = new ArrayList<>();
+        for (int i = 0; i < M; i++) {
+            lista.add(B[i]);
+        }
+        Collections.shuffle(lista);
+        for (int i = 0; i < M; i++) {
+            B[i] = lista.get(i);
+        }
+        return B;
+    }
+
+    // Método para crear el arreglo de búsqueda para el escenario 2
+    private static int[] crearArregloBusquedaConProbabilidades(int[] A, int M, double C) {
+        int N = A.length;
+        List<Integer> B = new ArrayList<>();
+        for (int i = 0; i < N; i++) {
+            int copias = (int) Math.floor(M * funcionProbabilidad(i, C));
+            for (int j = 0; j < copias; j++) {
+                B.add(A[i]);
+            }
+        }
+        // Convertir lista a arreglo
+        int[] arregloB = new int[B.size()];
+        for (int i = 0; i < B.size(); i++) {
+            arregloB[i] = B.get(i);
+        }
+        // Mezclar el arreglo B aleatoriamente
+        List<Integer> lista = new ArrayList<>();
+        for (int i = 0; i < B.size(); i++) {
+            lista.add(B.get(i));
+        }
+        Collections.shuffle(lista);
+        for (int i = 0; i < B.size(); i++) {
+            arregloB[i] = lista.get(i);
+        }
+        return arregloB;
+    }
+
+    // Método para realizar la experimentación y registrar costos promedio de cada árbol
+    public static void ejecutarExperimento(int N, int M) {
+        // Crear los árboles
+        ABB abb = new ABB();
+        SplayTree splayTree = new SplayTree();
+
+        // Generar arreglo A
+        int[] A = generarArregloAleatorio(N);
+
+        // Escenario 1: Inserción aleatoria y búsqueda con mezcla
+        for (int i = 0; i < N; i++) {
+            abb.insertar(A[i]);
+            splayTree.insertar(A[i]);
+        }
+        int[] B = crearArregloBusqueda(A, M);
+
+        // Tiempo de búsqueda en ABB
+        long tiempoInicio = System.nanoTime();
+        for (int i = 0; i < M; i++) {
+            abb.buscar(B[i]);
+        }
+        long tiempoFin = System.nanoTime();
+        double costoPromedioABB = (double) (tiempoFin - tiempoInicio) / M;
+        guardarResultado("Escenario 1", "ABB", costoPromedioABB, N, M);
+
+        // Tiempo de búsqueda en SplayTree
+        tiempoInicio = System.nanoTime();
+        for (int i = 0; i < M; i++) {
+            splayTree.buscar(B[i]);
+        }
+        tiempoFin = System.nanoTime();
+        double costoPromedioSplayTree = (double) (tiempoFin - tiempoInicio) / M;
+        guardarResultado("Escenario 1", "SplayTree", costoPromedioSplayTree, N, M);
+
+        // Escenario 2: Inserción aleatoria y búsqueda con probabilidades sesgadas
+        double C = calcularC(N);
+        int[] BProb = crearArregloBusquedaConProbabilidades(A, M, C);
+
+        // Tiempo de búsqueda en ABB
+        tiempoInicio = System.nanoTime();
+        for (int i = 0; i < BProb.length; i++) {
+            abb.buscar(BProb[i]);
+        }
+        tiempoFin = System.nanoTime();
+        costoPromedioABB = (double) (tiempoFin - tiempoInicio) / M;
+        guardarResultado("Escenario 2", "ABB", costoPromedioABB, N, M);
+
+        // Tiempo de búsqueda en SplayTree
+        tiempoInicio = System.nanoTime();
+        for (int i = 0; i < BProb.length; i++) {
+            splayTree.buscar(BProb[i]);
+        }
+        tiempoFin = System.nanoTime();
+        costoPromedioSplayTree = (double) (tiempoFin - tiempoInicio) / M;
+        guardarResultado("Escenario 2", "SplayTree", costoPromedioSplayTree, N, M);
+
+        // Escenario 3: Inserción ordenada y búsqueda con mezcla
+        Arrays.sort(A);
+        for (int i = 0; i < N; i++) {
+            abb.insertar(A[i]);
+            splayTree.insertar(A[i]);
+        }
+        B = crearArregloBusqueda(A, M);
+
+        // Tiempo de búsqueda en ABB
+        tiempoInicio = System.nanoTime();
+        for (int i = 0; i < M; i++) {
+            abb.buscar(B[i]);
+        }
+        tiempoFin = System.nanoTime();
+        costoPromedioABB = (double) (tiempoFin - tiempoInicio) / M;
+        guardarResultado("Escenario 3", "ABB", costoPromedioABB, N, M);
+
+        // Tiempo de búsqueda en SplayTree
+        tiempoInicio = System.nanoTime();
+        for (int i = 0; i < M; i++) {
+            splayTree.buscar(B[i]);
+        }
+        tiempoFin = System.nanoTime();
+        costoPromedioSplayTree = (double) (tiempoFin - tiempoInicio) / M;
+        guardarResultado("Escenario 3", "SplayTree", costoPromedioSplayTree, N, M);
+
+        // Escenario 4: Inserción en orden y búsqueda con probabilidades sesgadas
+        int[] CArray = Arrays.copyOf(A, A.length);
+        Arrays.sort(CArray);
+        for (int i = 0; i < N; i++) {
+            abb.insertar(CArray[i]);
+            splayTree.insertar(CArray[i]);
+        }
+        BProb = crearArregloBusquedaConProbabilidades(A, M, C);
+
+        // Tiempo de búsqueda en ABB
+        tiempoInicio = System.nanoTime();
+        for (int i = 0; i < BProb.length; i++) {
+            abb.buscar(BProb[i]);
+        }
+        tiempoFin = System.nanoTime();
+        costoPromedioABB = (double) (tiempoFin - tiempoInicio) / M;
+        guardarResultado("Escenario 4", "ABB", costoPromedioABB, N, M);
+
+        // Tiempo de búsqueda en SplayTree
+        tiempoInicio = System.nanoTime();
+        for (int i = 0; i < BProb.length; i++) {
+            splayTree.buscar(BProb[i]);
+        }
+        tiempoFin = System.nanoTime();
+        costoPromedioSplayTree = (double) (tiempoFin - tiempoInicio) / M;
+        guardarResultado("Escenario 4", "SplayTree", costoPromedioSplayTree, N, M);
+    }
+
+    // Método para guardar los resultados en un archivo CSV
+    private static void guardarResultado(String escenario, String tipoArbol, double costoPromedio, int N, int M) {
+        try (BufferedWriter writer = new BufferedWriter(new FileWriter("resultados.csv", true))) {
+            writer.write(escenario + "," + tipoArbol + "," + costoPromedio + "," + N + "," + M + "\n");
         } catch (IOException e) {
-            System.out.println("Error al escribir en el archivo CSV: " + e.getMessage());
+            e.printStackTrace();
         }
     }
 
-    // Método para registrar el tiempo promedio en el archivo CSV
-    private static void registrarTiempoPromedio(PrintWriter writer, int nEscenario, String tipoArbol, long tiempoTotal, int M) {
-        double tProm = tiempoTotal / (double) M;
-        writer.println(nEscenario + "," + "\"" + tipoArbol + "\"," + tProm);
-    }
-
-    // Genera el arreglo de búsquedas aleatorias para el Escenario 1
-    private static int[] generarArregloBusquedaAleatoria(int[] elementos, int M) {
-        int N = elementos.length;
-        int[] busquedas = new int[M];
-        for (int i = 0; i < N; i++) {
-            int repeticiones = M / N;
-            Arrays.fill(busquedas, i * repeticiones, (i + 1) * repeticiones, elementos[i]);
-        }
-        Collections.shuffle(Arrays.asList(busquedas));
-        return busquedas;
-    }
-
-    // Calcula la constante C para la función de probabilidad
-    private static double calcularConstanteC(int N) {
-        double suma = 0;
-        for (int i = 0; i < N; i++) {
-            suma += 1.0 / Math.pow(i + 1, 2);
-        }
-        return 1.0 / suma;
-    }
-
-    // Genera el arreglo de búsquedas sesgado según la función de probabilidad
-    private static int[] generarArregloBusquedaSesgado(int[] elementos, int M, double C) {
-        int N = elementos.length;
-        List<Integer> listaBusqueda = new ArrayList<>();
-        for (int i = 0; i < N; i++) {
-            int copias = (int) Math.floor(M * (C / Math.pow(i + 1, 2)));
-            listaBusqueda.addAll(Collections.nCopies(copias, elementos[i]));
-        }
-        Collections.shuffle(listaBusqueda);
-        return listaBusqueda.stream().mapToInt(Integer::intValue).toArray();
-    }
-
-    // Realiza el experimento en el ABB y calcula el tiempo total de búsqueda
-    private static long realizarBusquedaABB(ABB abb, int[] elementos) {
-        long inicio = System.nanoTime();
-        for (int valor : elementos) {
-            abb.buscar(valor);
-        }
-        return System.nanoTime() - inicio;
-    }
-
-    // Realiza el experimento en el Splay Tree y calcula el tiempo total de búsqueda
-    private static long realizarBusquedaSplayTree(SplayTree splayTree, int[] elementos) {
-        long inicio = System.nanoTime();
-        for (int valor : elementos) {
-            splayTree.buscar(valor);
-        }
-        return System.nanoTime() - inicio;
+    public static void main(String[] args) {
+        int N = 100000; // Número de elementos
+        int M = 100 * N; // Número de búsquedas
+        ejecutarExperimento(N, M);
     }
 }

@@ -1,28 +1,40 @@
-// Clase principal para probar el ABB
 public class TestABB {
     public static void main(String[] args) {
-        ABB abb = new ABB();
-        // Ejemplo de inserciones
-        abb.insertar(10);
-        abb.insertar(5);
-        abb.insertar(15);
-        abb.insertar(2);
-        abb.insertar(8);
-        abb.insertar(12);
-        abb.insertar(20);
-        abb.insertar(1);
-        abb.insertar(3);
-        abb.insertar(7);
-        abb.insertar(9);
-        abb.insertar(11);
-        abb.insertar(13);
-        
+        ABB arbol = new ABB();
 
-        // Ejemplo de búsqueda
-        System.out.println("Buscar 10: " + abb.buscar(10)); // true
-        System.out.println("Buscar 7: " + abb.buscar(7));   // false
+        System.out.println("Prueba de inserciones en ABB:");
 
-        // Imprimir el árbol en orden
-        abb.imprimirEstructura();
+        // Caso 1: Inserción en un árbol vacío
+        System.out.println("Insertando valor 10 en árbol vacío:");
+        arbol.insertar(10);
+        arbol.imprimirEnOrden(); // Debe mostrar: 10
+
+        // Caso 2: Inserciones en el subárbol izquierdo
+        System.out.println("\nInsertando valores 5 y 3 en el subárbol izquierdo:");
+        arbol.insertar(5);
+        arbol.insertar(3);
+        arbol.imprimirEnOrden(); // Debe mostrar: 3 5 10
+
+        // Caso 3: Inserciones en el subárbol derecho
+        System.out.println("\nInsertando valores 15 y 20 en el subárbol derecho:");
+        arbol.insertar(15);
+        arbol.insertar(20);
+        arbol.imprimirEnOrden(); // Debe mostrar: 3 5 10 15 20
+
+        // Caso 4: Inserción de un valor duplicado
+        System.out.println("\nIntentando insertar un valor duplicado (10):");
+        arbol.insertar(10);
+        arbol.imprimirEnOrden(); // Debe mostrar: 3 5 10 15 20 (sin duplicados)
+
+        // Caso 5: Inserciones adicionales para crear un árbol con varios niveles
+        System.out.println("\nInsertando valores 8, 12, y 18 para verificar estructura:");
+        arbol.insertar(8);
+        arbol.insertar(12);
+        arbol.insertar(18);
+        arbol.imprimirEnOrden(); // Debe mostrar: 3 5 8 10 12 15 18 20
+
+        // Imprimir la estructura del árbol para verificar visualmente
+        System.out.println("\nEstructura del árbol (en preorden):");
+        arbol.imprimirEstructura();
     }
 }
