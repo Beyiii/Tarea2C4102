@@ -1,107 +1,172 @@
 // Clase para el Splay Tree
-class SplayTree {
+public class SplayTree {
     private NodoSplay raiz;
 
-    // Constructor
-    public SplayTree() {
-        this.raiz = null;
-    }
+    // Rotaciones del árbol
 
-    // Método de rotación "Zig"
-    private NodoSplay zig(NodoSplay x) {
-        NodoSplay y = x.izquierdo;
-        x.izquierdo = y.derecho;
-        y.derecho = x;
-        return y;
-    }
-
-    // Método de rotación "Zag"
-    private NodoSplay zag(NodoSplay x) {
-        NodoSplay y = x.derecho;
-        x.derecho = y.izquierdo;
-        y.izquierdo = x;
-        return y;
-    }
-
-    // Método de rotación "Zig-Zig"
-    private NodoSplay zigZig(NodoSplay x) {
-        x = zig(x);
-        return zig(x);
-    }
-
-    // Método de rotación "Zag-Zag"
-    private NodoSplay zagZag(NodoSplay x) {
-        x = zag(x);
-        return zag(x);
-    }
-
-    // Método de rotación "Zig-Zag"
-    private NodoSplay zigZag(NodoSplay x) {
-        x.izquierdo = zag(x.izquierdo);
-        return zig(x);
-    }
-
-    // Método de rotación "Zag-Zig"
-    private NodoSplay zagZig(NodoSplay x) {
-        x.derecho = zig(x.derecho);
-        return zag(x);
-    }
-
-    // Método splay para llevar el nodo con valor "valor" a la raíz
-    private NodoSplay splay(NodoSplay raiz, int valor) {
-        if (raiz == null || raiz.valor == valor) {
-            return raiz;
-        }
-
-        // Si el valor está en el subárbol izquierdo
-        if (valor < raiz.valor) {
-            if (raiz.izquierdo == null) return raiz; // El valor no está en el árbol
-
-            if (valor < raiz.izquierdo.valor) { // Zig-Zig (izquierda-izquierda)
-                raiz.izquierdo.izquierdo = splay(raiz.izquierdo.izquierdo, valor);
-                raiz = zig(raiz);
-            } else if (valor > raiz.izquierdo.valor) { // Zig-Zag (izquierda-derecha)
-                raiz.izquierdo.derecho = splay(raiz.izquierdo.derecho, valor);
-                if (raiz.izquierdo.derecho != null) {
-                    raiz.izquierdo = zag(raiz.izquierdo);
-                }
-            }
-            return (raiz.izquierdo == null) ? raiz : zig(raiz);
-        } else { // El valor está en el subárbol derecho
-            if (raiz.derecho == null) return raiz; // El valor no está en el árbol
-
-            if (valor > raiz.derecho.valor) { // Zag-Zag (derecha-derecha)
-                raiz.derecho.derecho = splay(raiz.derecho.derecho, valor);
-                raiz = zag(raiz);
-            } else if (valor < raiz.derecho.valor) { // Zag-Zig (derecha-izquierda)
-                raiz.derecho.izquierdo = splay(raiz.derecho.izquierdo, valor);
-                if (raiz.derecho.izquierdo != null) {
-                    raiz.derecho = zig(raiz.derecho);
-                }
-            }
-            return (raiz.derecho == null) ? raiz : zag(raiz);
+    // Zig
+    private void zig(NodoSplay x) {
+        NodoSplay p = x.padre;
+        if (p != null && p.izquierdo == x) {
+            NodoSplay B = x.derecho;
+            x.derecho = p;
+            p.izquierdo = B;
+            if (B != null) B.padre = p;
+            reemplazarPadre(p, x);
+            x.padre = p.padre;
+            p.padre = x;
         }
     }
 
-    // Método de búsqueda con splay
-    public boolean buscar(int valor) {
-        raiz = splay(raiz, valor);
-        return (raiz != null && raiz.valor == valor);
+    // Zag
+    private void zag(NodoSplay x) {
+        NodoSplay p = x.padre;
+        if (p != null && p.derecho == x) {
+            NodoSplay B = x.izquierdo;
+            x.izquierdo = p;
+            p.derecho = B;
+            if (B != null) B.padre = p;
+            reemplazarPadre(p, x);
+            x.padre = p.padre;
+            p.padre = x;
+        }
     }
 
-    // Rotaciones simples
-    private Node rotateRight(Node node) {
-        Node x = node.left;
-        node.left = x.right;
-        x.right = node;
-        return x;
+    // Zig-zig
+    private void zigZig(NodoSplay x) {
+        NodoSplay p = x.padre;
+        NodoSplay g = p.padre;
+        zig(p);
+        zig(x);
     }
 
+    // Zag-zag
+    private void zagZag(NodoSplay x) {
+        NodoSplay p = x.padre;
+        NodoSplay g = p.padre;
+        zag(p);
+        zag(x);
+    }
 
-    private Node rotateLeft(Node node) {
-        Node x = node.right;
-        node.right = x.left;
-        x.left = node;
-        return x;
+    // Zig-zag
+    private void zigZag(NodoSplay x) {
+        zig(x);
+        zag(x);
+    }
+
+    // Zag-zig
+    private void zagZig(NodoSplay x) {
+        zag(x);
+        zig(x);
+    }
+
+    // Reemplaza el NodoSplay p con el NodoSplay x en el árbol
+    private void reemplazarPadre(NodoSplay p, NodoSplay x) {
+        if (p.padre == null) {
+            raiz = x;
+        } else if (p == p.padre.izquierdo) {
+            p.padre.izquierdo = x;
+        } else {
+            p.padre.derecho = x;
+        }
+        if (x != null) x.padre = p.padre;
+    }
+
+    // Operación Splay
+    private void splay(NodoSplay x) {
+        while (x.padre != null) {
+            NodoSplay p = x.padre;
+            NodoSplay g = p.padre;
+            if (g == null) {
+                // Caso raíz: Zig o Zag
+                if (x == p.izquierdo) zig(x);
+                else zag(x);
+            } else if (x == p.izquierdo && p == g.izquierdo) {
+                // Zig-zig
+                zigZig(x);
+            } else if (x == p.derecho && p == g.derecho) {
+                // Zag-zag
+                zagZag(x);
+            } else if (x == p.izquierdo && p == g.derecho) {
+                // Zag-zig
+                zagZig(x);
+            } else {
+                // Zig-zag
+                zigZag(x);
+            }
+        }
+    }
+
+    // Búsqueda en Splay Tree
+    public NodoSplay buscar(int valor) {
+        NodoSplay x = raiz;
+        while (x != null) {
+            if (valor < x.valor) {
+                x = x.izquierdo;
+            } else if (valor > x.valor) {
+                x = x.derecho;
+            } else {
+                splay(x);
+                return x;
+            }
+        }
+        return null;
+    }
+
+    // Inserción en Splay Tree
+    public void insertar(int valor) {
+        if (raiz == null) {
+            raiz = new NodoSplay(valor);
+            return;
+        }
+        NodoSplay x = raiz;
+        NodoSplay p = null;
+        while (x != null) {
+            p = x;
+            if (valor < x.valor) {
+                x = x.izquierdo;
+            } else if (valor > x.valor) {
+                x = x.derecho;
+            } else {
+                splay(x);
+                return;
+            }
+        }
+        NodoSplay nuevo = new NodoSplay(valor);
+        nuevo.padre = p;
+        if (valor < p.valor) {
+            p.izquierdo = nuevo;
+        } else {
+            p.derecho = nuevo;
+        }
+        splay(nuevo);
+    }
+
+    // Método para imprimir el árbol en orden
+    public void enOrden(NodoSplay NodoSplay) {
+        if (NodoSplay != null) {
+            enOrden(NodoSplay.izquierdo);
+            System.out.print(NodoSplay.valor + " ");
+            enOrden(NodoSplay.derecho);
+        }
+    }
+
+    public void imprimir() {
+        enOrden(raiz);
+        System.out.println();
+    }
+
+    // Función mejorada para imprimir la estructura del árbol
+    public void imprimirEstructura() {
+        System.out.println(imprimirEstructuraRecursivo(raiz));
+    }
+
+    private String imprimirEstructuraRecursivo(NodoSplay NodoSplay) {
+        if (NodoSplay == null) {
+            return "()"; // NodoSplay vacío
+        }
+        return "(" + NodoSplay.valor + " " 
+                + imprimirEstructuraRecursivo(NodoSplay.izquierdo) + " " 
+                + imprimirEstructuraRecursivo(NodoSplay.derecho) + ")";
     }
 }

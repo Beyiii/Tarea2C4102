@@ -57,4 +57,18 @@ class ABB {
             imprimirEnOrdenRecursivo(nodo.derecho);
         }
     }
+
+    // Función mejorada para imprimir la estructura del árbol
+    public void imprimirEstructura() {
+        System.out.println(imprimirEstructuraRecursivo(raiz));
+    }
+
+    private String imprimirEstructuraRecursivo(Nodo nodo) {
+        if (nodo == null) {
+            return "()"; // Nodo vacío
+        }
+        return "(" + nodo.valor + " " 
+                + imprimirEstructuraRecursivo(nodo.izquierdo) + " " 
+                + imprimirEstructuraRecursivo(nodo.derecho) + ")";
+    }
 }

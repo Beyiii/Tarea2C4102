@@ -1,5 +1,5 @@
 // Clase principal para probar el ABB
-public class Main {
+public class TestABB {
     public static void main(String[] args) {
         ABB abb = new ABB();
         // Ejemplo de inserciones
@@ -14,6 +14,6 @@ public class Main {
         System.out.println("Buscar 7: " + abb.buscar(7));   // false
 
         // Imprimir el árbol en orden
-        abb.imprimirEnOrden();
+        abb.imprimirEstructura();
     }
 }
