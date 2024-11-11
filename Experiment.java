@@ -196,7 +196,7 @@ public class Experiment {
     }
 
     public static void main(String[] args) {
-        int N = 100000; // Número de elementos
+        int N = 500000; // Número de elementos
         int M = 100 * N; // Número de búsquedas
         ejecutarExperimento(N, M);
     }
